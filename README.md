@@ -73,7 +73,7 @@ which generated this project's scaffolding):
 | Variable                                    |                                                                                                                                                                                                        |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | The one key pair clients of _this_ service sign with.                                                                                                                                                  |
-| `FILEN_ENDPOINT`                            | Where the gateway is reached -- the in-cluster Service (`http://filen-cli-service:80`, the Helm default) or its externally-exposed hostname (`.env.local`, for a laptop that can't reach the cluster). |
+| `FILEN_ENDPOINT`                            | Where the gateway is reached -- the chart's sidecar on loopback (`http://127.0.0.1:8080`, set automatically) or its externally-exposed hostname (`.env.local`, for a laptop that can't reach the cluster). |
 | `FILEN_ACCESS_KEY` / `FILEN_SECRET_KEY`     | The gateway's own S3 credentials (its `--s3-access-key-id` / `--s3-secret-access-key`).                                                                                                                |
 | `FILEN_EMAIL` / `FILEN_PASSWORD`            | The Filen account the bundled gateway logs into.                                                                                                                                                       |
 | `MAX_OBJECT_BYTES`                          | Single-PUT / completed-multipart-upload cap (default 1 GiB).                                                                                                                                           |
@@ -133,8 +133,8 @@ Copy `.env.secret.example` to `.env.secret` and fill in real values, then:
 
 Re-running that `create secret` command after editing `.env.secret` fails because the
 Secret already exists -- use `--dry-run=client -o yaml | kubectl apply -f -` instead when
-rotating a value, then `kubectl -n filen-s3-emulator rollout restart deploy/filen-s3-emulator
-deploy/filen-cli` (a plain Secret isn't content-hashed, so pods don't roll on their own).
+rotating a value, then `kubectl -n filen-s3-emulator rollout restart deploy/filen-s3-emulator`
+(a plain Secret isn't content-hashed, so pods don't roll on their own).
 
 Then install or upgrade the chart:
 

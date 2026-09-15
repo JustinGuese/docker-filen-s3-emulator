@@ -29,9 +29,9 @@ env:
   STAGING_DIR: /staging
   MULTIPART_EXPIRY_HOURS: "24"
   LIST_CACHE_SECONDS: "15"
-  # Same-namespace ClusterIP Service of the bundled gateway (filenCli below).
-  # Point this elsewhere if filenCli.enabled is false.
-  FILEN_ENDPOINT: "http://filen-cli-service:80"
+  # Only used when filenCli.enabled is false -- otherwise the chart points at
+  # the sidecar on loopback. Set it to a gateway you run elsewhere.
+  # FILEN_ENDPOINT: "http://filen-gateway.example:80"
 
 service:
   port: 8000
@@ -53,14 +53,17 @@ resources:
 staging:
   sizeLimit: 20Gi
 
-# The Filen CLI's own S3 gateway (`filen s3`), bundled so the release is
-# self-contained -- no dependency on a gateway deployed elsewhere. Disable
-# and point env.FILEN_ENDPOINT elsewhere if you already run one.
+# The Filen CLI's own S3 gateway (`filen s3`), run as a sidecar in the app pod
+# so the release is self-contained. Disable and set env.FILEN_ENDPOINT if you
+# already run a gateway elsewhere.
 filenCli:
   enabled: true
   image:
-    repository: guestros/filen-cli
+    repository: filen/cli
     tag: latest
+    pullPolicy: Always
+  # Loopback port inside the pod; non-root, so above 1024.
+  port: 8080
   resources:
     requests:
       cpu: 100m

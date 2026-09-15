@@ -6,3 +6,7 @@ data:
   {{- range $k, $v := .Values.env }}
   {{ $k }}: {{ $v | quote }}
   {{- end }}
+  {{- if .Values.filenCli.enabled }}
+  # The bundled gateway is a sidecar on loopback (see deployment.yaml).
+  FILEN_ENDPOINT: {{ printf "http://127.0.0.1:%v" .Values.filenCli.port | quote }}
+  {{- end }}

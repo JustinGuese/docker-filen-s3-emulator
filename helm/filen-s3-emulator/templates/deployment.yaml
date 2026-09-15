@@ -34,6 +34,68 @@ spec:
         fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
+      {{- if .Values.filenCli.enabled }}
+      # The Filen CLI's S3 gateway as a native sidecar: an init container with
+      # restartPolicy Always starts before the app, and its startupProbe holds
+      # the app back until the gateway listens. Bound to loopback, so it is
+      # reachable only from this pod -- no Service in front of it.
+      initContainers:
+        - name: filen-cli
+          image: "{{ .Values.filenCli.image.repository }}:{{ .Values.filenCli.image.tag }}"
+          imagePullPolicy: {{ .Values.filenCli.image.pullPolicy }}
+          restartPolicy: Always
+          # The CLI reads FILEN_EMAIL / FILEN_PASSWORD itself, which keeps the
+          # password out of argv. Only the keys the gateway needs, not the
+          # whole Secret.
+          env:
+            {{- range $name := list "FILEN_EMAIL" "FILEN_PASSWORD" "FILEN_ACCESS_KEY" "FILEN_SECRET_KEY" }}
+            - name: {{ $name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.secretName }}
+                  key: {{ $name }}
+            {{- end }}
+            # Non-root with a read-only root filesystem: credentials cache and
+            # runtime scratch go to emptyDirs.
+            - name: FILEN_CLI_DATA_DIR
+              value: /data
+            - name: HOME
+              value: /data
+          args:
+            - "--skip-update"
+            - "s3"
+            - "--s3-hostname"
+            - "127.0.0.1"
+            - "--s3-port"
+            - {{ .Values.filenCli.port | quote }}
+            - "--s3-access-key-id"
+            - "$(FILEN_ACCESS_KEY)"
+            - "--s3-secret-access-key"
+            - "$(FILEN_SECRET_KEY)"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: filen-cli-data
+              mountPath: /data
+            - name: filen-cli-tmp
+              mountPath: /tmp
+          # exec, not tcpSocket: the kubelet dials the pod IP, and the gateway
+          # listens on loopback only.
+          startupProbe:
+            exec:
+              command: ["nc", "-z", "127.0.0.1", {{ .Values.filenCli.port | quote }}]
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command: ["nc", "-z", "127.0.0.1", {{ .Values.filenCli.port | quote }}]
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.filenCli.resources | nindent 12 }}
+      {{- end }}
       containers:
         - name: filen-s3-emulator
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -84,3 +146,9 @@ spec:
         - name: staging
           emptyDir:
             sizeLimit: {{ .Values.staging.sizeLimit }}
+        {{- if .Values.filenCli.enabled }}
+        - name: filen-cli-data
+          emptyDir: {}
+        - name: filen-cli-tmp
+          emptyDir: {}
+        {{- end }}
