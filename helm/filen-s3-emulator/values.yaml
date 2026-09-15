@@ -39,7 +39,7 @@ service:
 ingress:
   enabled: true
   className: cloudflare-tunnel
-  host: filen-s3-emulator-api.datafortress.cloud
+  host: s3.datafortress.cloud
 
 resources:
   requests:
@@ -59,7 +59,7 @@ staging:
 filenCli:
   enabled: true
   image:
-    repository: filen/cli
+    repository: guestros/filen-cli
     tag: latest
   resources:
     requests:

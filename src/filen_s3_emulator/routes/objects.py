@@ -1,7 +1,7 @@
 """GetObject / HeadObject / PutObject / CopyObject / DeleteObject."""
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from email.utils import format_datetime, parsedate_to_datetime
 from urllib.parse import unquote
 
@@ -94,7 +94,8 @@ def _object_headers(ctx: S3Context, info: ObjectInfo, content_type: str | None) 
     if etag := s3xml.quote_etag(info.etag):
         headers["ETag"] = etag
     if info.last_modified:
-        headers["Last-Modified"] = format_datetime(info.last_modified, usegmt=True)
+        # usegmt demands datetime.UTC itself; botocore hands back dateutil tzutc().
+        headers["Last-Modified"] = format_datetime(info.last_modified.astimezone(UTC), usegmt=True)
     for param, header in _OVERRIDES.items():
         if value := ctx.params.get(param):
             headers[header] = value

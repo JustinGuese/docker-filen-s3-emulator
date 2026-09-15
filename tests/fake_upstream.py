@@ -9,6 +9,7 @@ import threading
 import uuid
 from datetime import UTC, datetime
 
+from dateutil.tz import tzutc
 from df_s3_filen_wrapper import Entry
 
 from filen_s3_emulator.errors import S3Error
@@ -74,14 +75,15 @@ class FakeUpstream:
         data = body.read()
         assert len(data) == size, f"declared {size} bytes, body had {len(data)}"
         etag = str(uuid.uuid4())
-        now = datetime.now(UTC)
+        # botocore parses LastModified with dateutil's tzutc(), not datetime.UTC.
+        now = datetime.now(tzutc())
         with self.lock:
             self._objects(bucket)[key] = (data, now, etag)
         return f'"{etag}"', now
 
     def copy(self, source_bucket: str, source_key: str, bucket: str, key: str):
         data = self._objects(source_bucket)[source_key][0]
-        etag, now = str(uuid.uuid4()), datetime.now(UTC)
+        etag, now = str(uuid.uuid4()), datetime.now(tzutc())
         self._objects(bucket)[key] = (data, now, etag)
         return etag, now
 

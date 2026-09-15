@@ -29,6 +29,9 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ .Values.secretName }}
+          # Requires an image with the compiled `filen` binary on PATH
+          # (guestros/filen-cli). The official filen/cli image has no such
+          # binary and its v0.0.39 `s3` hangs silently without binding.
           command:
             - "filen"
           args:
