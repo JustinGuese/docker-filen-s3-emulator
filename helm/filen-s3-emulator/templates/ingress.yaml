@@ -1,0 +1,22 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: filen-s3-emulator-ingress
+  labels:
+    app: filen-s3-emulator
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  # TLS terminates upstream of this ingress class; nothing to configure here.
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: filen-s3-emulator-service
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}

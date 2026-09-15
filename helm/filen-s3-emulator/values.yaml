@@ -1,0 +1,69 @@
+# Default values for filen-s3-emulator.
+#
+# Credentials are NOT here. The Secret this chart reads (secretName below) is
+# created by hand from .env.secret before `helm install` -- see the README's
+# "Deploy with Helm" section.
+
+replicaCount: 1
+
+image:
+  repository: guestros/filen-s3-emulator
+  tag: latest
+  pullPolicy: Always
+
+# Only needed for a private registry. Docker Hub images referenced above are
+# public, so this is empty by default.
+imagePullSecrets: []
+
+# Name of the Secret (created out-of-band, see README) holding:
+#   S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY   -- this service's own credentials
+#   FILEN_ACCESS_KEY, FILEN_SECRET_KEY       -- the gateway's S3 credentials
+#   FILEN_EMAIL, FILEN_PASSWORD              -- the Filen account the bundled gateway logs into
+secretName: filen-s3-emulator-secrets
+
+# Non-secret configuration, rendered into a ConfigMap and consumed via envFrom.
+# Mirrors src/filen_s3_emulator/config.py's Settings fields.
+env:
+  FILEN_REGION: filen
+  MAX_OBJECT_BYTES: "1073741824"
+  STAGING_DIR: /staging
+  MULTIPART_EXPIRY_HOURS: "24"
+  LIST_CACHE_SECONDS: "15"
+  # Same-namespace ClusterIP Service of the bundled gateway (filenCli below).
+  # Point this elsewhere if filenCli.enabled is false.
+  FILEN_ENDPOINT: "http://filen-cli-service:80"
+
+service:
+  port: 8000
+
+ingress:
+  enabled: true
+  className: cloudflare-tunnel
+  host: filen-s3-emulator-api.datafortress.cloud
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+# Multipart parts and in-flight uploads are spooled here -- not the gateway,
+# which buffers a whole PUT in memory. Local to the pod, so replicaCount stays at 1.
+staging:
+  sizeLimit: 20Gi
+
+# The Filen CLI's own S3 gateway (`filen s3`), bundled so the release is
+# self-contained -- no dependency on a gateway deployed elsewhere. Disable
+# and point env.FILEN_ENDPOINT elsewhere if you already run one.
+filenCli:
+  enabled: true
+  image:
+    repository: filen/cli
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi

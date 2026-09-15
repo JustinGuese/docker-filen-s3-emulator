@@ -1,0 +1,62 @@
+{{- if .Values.filenCli.enabled }}
+# The Filen CLI's S3 gateway (`filen s3`) this service fronts, deployed alongside it so
+# the release is self-contained -- no dependency on a gateway running elsewhere.
+# Credentials come from the same Secret as the main deployment (secretName), never
+# rendered into a values file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filen-cli
+  labels:
+    app: filen-cli
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: filen-cli
+  template:
+    metadata:
+      labels:
+        app: filen-cli
+    spec:
+      containers:
+        - name: filen-cli
+          image: "{{ .Values.filenCli.image.repository }}:{{ .Values.filenCli.image.tag }}"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secretName }}
+          command:
+            - "filen"
+          args:
+            - "--email"
+            - "$(FILEN_EMAIL)"
+            - "--password"
+            - "$(FILEN_PASSWORD)"
+            - "s3"
+            - "--s3-access-key-id"
+            - "$(FILEN_ACCESS_KEY)"
+            - "--s3-secret-access-key"
+            - "$(FILEN_SECRET_KEY)"
+          resources:
+            {{- toYaml .Values.filenCli.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: filen-cli-service
+  labels:
+    app: filen-cli
+spec:
+  selector:
+    app: filen-cli
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
+  type: ClusterIP
+{{- end }}

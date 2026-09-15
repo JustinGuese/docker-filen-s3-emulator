@@ -1,0 +1,17 @@
+filen-s3-emulator deployed to namespace {{ .Release.Namespace }}.
+
+{{- if not (lookup "v1" "Secret" .Release.Namespace .Values.secretName) }}
+
+WARNING: Secret "{{ .Values.secretName }}" was not found in this namespace.
+Pods will sit in CreateContainerConfigError until it exists -- see the
+README's "Deploy with Helm" section for the kubectl create secret command.
+{{- end }}
+
+{{- if .Values.ingress.enabled }}
+
+Once ready, reachable at: https://{{ .Values.ingress.host }}
+{{- else }}
+
+Ingress is disabled -- port-forward to reach it:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/filen-s3-emulator-service 8000:{{ .Values.service.port }}
+{{- end }}

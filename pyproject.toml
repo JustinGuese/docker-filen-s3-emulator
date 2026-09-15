@@ -1,0 +1,57 @@
+[project]
+name = "filen-s3-emulator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Justin Guese", email = "guese.justin@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "boto3>=1.43.94",
+    "crc32c>=2.9.post0",
+    "defusedxml>=0.7.1",
+    "df-s3-filen-wrapper>=0.1.1",
+    "fastapi>=0.141.1",
+    "numpy<2.4",
+    "pydantic-settings>=2.15.0",
+    "python-multipart>=0.0.32",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[project.scripts]
+filen-s3-emulator = "filen_s3_emulator:main"
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.7",
+]
+
+[tool.ske]
+namespace = "filen-s3-emulator"
+configmap = "filen-s3-emulator-config"
+secret    = "filen-s3-emulator-env"
+config_files = [".env", ".env.cloud"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# B008 fires on FastAPI's Depends()/Form() default-argument idiom.
+ignore = ["B008"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+asyncio_mode = "auto"
+
+[tool.mypy]
+ignore_missing_imports = true

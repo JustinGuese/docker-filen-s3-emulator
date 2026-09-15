@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filen-s3-emulator
+  labels:
+    app: filen-s3-emulator
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: filen-s3-emulator
+  template:
+    metadata:
+      labels:
+        app: filen-s3-emulator
+    spec:
+      # Public resolvers must never be listed here: on a CoreDNS timeout the
+      # glibc resolver retries the next nameserver, and a public resolver
+      # answers NXDOMAIN for *.svc.cluster.local, turning a retryable
+      # timeout into a hard failure. CoreDNS forwards external names
+      # upstream, so it is sufficient on its own.
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: filen-s3-emulator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+          # secretRef first: later envFrom sources win, so a stale Secret
+          # must never be shadowed by the ConfigMap.
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secretName }}
+            - configMapRef:
+                name: filen-s3-emulator-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: staging
+              mountPath: /staging
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: staging
+          emptyDir:
+            sizeLimit: {{ .Values.staging.sizeLimit }}

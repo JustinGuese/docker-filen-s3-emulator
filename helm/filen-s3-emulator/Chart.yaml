@@ -1,0 +1,6 @@
+apiVersion: v2
+name: filen-s3-emulator
+description: S3-compatible front for the Filen CLI's S3 gateway
+type: application
+version: 0.1.0
+appVersion: "latest"

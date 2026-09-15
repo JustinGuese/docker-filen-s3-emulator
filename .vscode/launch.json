@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "filen-s3-emulator: uvicorn",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": ["filen_s3_emulator.main:app", "--reload"],
+            "cwd": "${workspaceFolder}",
+            "env": { "APP_ENV": "local" },
+            "jinja": true
+        }
+    ]
+}

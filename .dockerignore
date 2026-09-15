@@ -1,0 +1,11 @@
+# .env.secret must never reach a build context that gets COPYed into a layer.
+.env.secret
+.git
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+tests
+chart
+*.db

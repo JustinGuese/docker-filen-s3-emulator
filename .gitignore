@@ -1,0 +1,5 @@
+
+# Plaintext credentials. The encrypted copy (.env.secret.enc) is committed.
+/.env.secret
+**__pycache__/**
+/.staging/
