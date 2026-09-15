@@ -48,7 +48,7 @@ spec:
           # password out of argv. Only the keys the gateway needs, not the
           # whole Secret.
           env:
-            {{- range $name := list "FILEN_EMAIL" "FILEN_PASSWORD" "FILEN_ACCESS_KEY" "FILEN_SECRET_KEY" }}
+            {{- range $name := list "FILEN_EMAIL" "FILEN_PASSWORD" "S3_ACCESS_KEY_ID" "S3_SECRET_ACCESS_KEY" }}
             - name: {{ $name }}
               valueFrom:
                 secretKeyRef:
@@ -61,6 +61,7 @@ spec:
               value: /data
             - name: HOME
               value: /data
+          # Same key pair as the app: the app signs its upstream requests with it.
           args:
             - "--skip-update"
             - "s3"
@@ -69,9 +70,9 @@ spec:
             - "--s3-port"
             - {{ .Values.filenCli.port | quote }}
             - "--s3-access-key-id"
-            - "$(FILEN_ACCESS_KEY)"
+            - "$(S3_ACCESS_KEY_ID)"
             - "--s3-secret-access-key"
-            - "$(FILEN_SECRET_KEY)"
+            - "$(S3_SECRET_ACCESS_KEY)"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

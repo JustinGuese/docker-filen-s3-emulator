@@ -18,14 +18,13 @@ class Settings(BaseSettings):
     app_name: str = "filen-s3-emulator"
     log_level: str = "INFO"
 
-    # The one key pair clients of this service sign with.
+    # The one key pair: clients of this service sign with it, and this service signs its
+    # requests to the gateway with it (the gateway is started with the same pair).
     s3_access_key_id: str = ""
     s3_secret_access_key: str = ""
 
     # The Filen CLI gateway (`filen s3`) this service fronts.
     filen_endpoint: str = ""
-    filen_access_key: str = ""
-    filen_secret_key: str = ""
     filen_region: str = "filen"
 
     # The gateway buffers a whole PUT in memory, so a completed multipart upload -- which

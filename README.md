@@ -72,9 +72,8 @@ which generated this project's scaffolding):
 
 | Variable                                    |                                                                                                                                                                                                        |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | The one key pair clients of _this_ service sign with.                                                                                                                                                  |
-| `FILEN_ENDPOINT`                            | Where the gateway is reached -- the chart's sidecar on loopback (`http://127.0.0.1:8080`, set automatically) or its externally-exposed hostname (`.env.local`, for a laptop that can't reach the cluster). |
-| `FILEN_ACCESS_KEY` / `FILEN_SECRET_KEY`     | The gateway's own S3 credentials (its `--s3-access-key-id` / `--s3-secret-access-key`).                                                                                                                |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | The one key pair: clients of this service sign with it, and the Filen gateway is started with it. |
+| `FILEN_ENDPOINT` | Where the gateway is reached -- the chart's sidecar on loopback (`http://127.0.0.1:8080`, set automatically), or a gateway you run locally (`.env.local`). |
 | `FILEN_EMAIL` / `FILEN_PASSWORD`            | The Filen account the bundled gateway logs into.                                                                                                                                                       |
 | `MAX_OBJECT_BYTES`                          | Single-PUT / completed-multipart-upload cap (default 1 GiB).                                                                                                                                           |
 | `STAGING_DIR`                               | Where multipart parts and in-flight bodies are spooled (default `/staging`).                                                                                                                           |
@@ -87,6 +86,11 @@ In the cluster, the non-secret variables above come from the Helm chart's `value
 ## Local development
 
     uv sync
+    # the gateway, with the same key pair (FILEN_EMAIL / FILEN_PASSWORD from .env.secret)
+    set -a; . ./.env.secret; set +a
+    npx @filen/cli --skip-update s3 --s3-hostname 127.0.0.1 --s3-port 8080 \
+      --s3-access-key-id "$S3_ACCESS_KEY_ID" --s3-secret-access-key "$S3_SECRET_ACCESS_KEY"
+    # in another shell
     uv run uvicorn filen_s3_emulator.main:app --reload
     uv run pytest -q
     uv run ruff check . && uv run ruff format --check .
@@ -119,9 +123,8 @@ into `values.yaml`** -- they're created once as a plain Kubernetes Secret, from 
 `.env.secret` file used locally:
 
 ```
-FILEN_ACCESS_KEY / FILEN_SECRET_KEY   the gateway's own S3 credentials
-FILEN_EMAIL / FILEN_PASSWORD          the Filen account the bundled gateway logs into
-S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY   the key pair clients of this service sign with
+S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY   the one key pair: clients sign with it, the gateway is started with it
+FILEN_EMAIL / FILEN_PASSWORD              the Filen account the gateway logs into
 ```
 
 Copy `.env.secret.example` to `.env.secret` and fill in real values, then:

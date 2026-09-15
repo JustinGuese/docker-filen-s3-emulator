@@ -42,8 +42,8 @@ def create_app(settings: Settings | None = None, upstream: Upstream | None = Non
             raise RuntimeError("S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY must be set")
         app.state.upstream = upstream or Upstream(
             settings.filen_endpoint,
-            settings.filen_access_key,
-            settings.filen_secret_key,
+            settings.s3_access_key_id,
+            settings.s3_secret_access_key,
             region=settings.filen_region,
             cache_seconds=settings.list_cache_seconds,
         )
